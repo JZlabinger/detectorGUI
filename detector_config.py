@@ -8,10 +8,8 @@ class Detector:
         # DCU network config, please adapt
         self.detector = DEigerClient(ip, port)
 
-    def initialize(self):
-        print('Initializing...')
+    def initialize(self, func):
         self.detector.sendDetectorCommand('initialize')
-        print('Initialized')
     
     def setDifferenceModeEnabled(self):
         # Enable difference mode, this disables single threshold mode
@@ -19,6 +17,9 @@ class Detector:
     
     def setElement(self, elem):
         self.detector.setDetectorConfig('element', str(elem))
+        
+    def setEnergy(self, energy):
+        self.detector.setDetectorConfig('energy', str(energy))
         
     def setFrameTime(self, frameTime):
         self.detector.setDetectorConfig('frame_time', float(frameTime))
