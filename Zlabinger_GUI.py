@@ -8,6 +8,7 @@ import tkinter as tk
 from tkinter import scrolledtext
 import sys
 import threading
+import re
 sys.path.append('c:/EigerPythonDemoScript/')
 from DEigerClient import DEigerClient
 
@@ -108,14 +109,14 @@ def start():
     printconsole('Disarming detector')
     detector.sendDetectorCommand('disarm')
     
-    fname = namepattern.replace('$id.*', '')
-    fpath = str(lbl_path.get())
-    printconsole('replaced; ' + str(fname))
+    fname = re.sub('[$]id.*', '', namepattern)
+    fpath = str(lbl_path.cget('text'))
+    printconsole('replaced: ' + str(fname))
     downloadfiles(fname, fpath)
         
     enable_all_inputs()
     
-def downloadfiles(fname, fpath):
+def downloadfiles(fname='', fpath=DEFAULT_FPATH):
     printconsole('Preparing FileWriter')
     detector.fileWriterStatus('data')
     files = [f for f in detector.fileWriterStatus('data')['value'] if fname in f]
@@ -124,6 +125,14 @@ def downloadfiles(fname, fpath):
         print('\t[OK] %s' %f)
     printconsole('Clearing buffer')
     detector.sendFileWriterCommand('clear')
+    
+    enable_all_inputs()
+
+def downloadfilesmanual():
+    disable_all_inputs()
+    path = lbl_path.cget('text')
+    downloadfiles(fpath=path)
+
 
 # Configure Window
 window = tk.Tk()
@@ -206,8 +215,14 @@ btn_choosepath.grid(row=8, column=1, sticky="w")
 lbl_path.grid(row=9, column=0, columnspan=2, sticky="ew")
 all_inputs.append(btn_choosepath)
 
-btn_start = tk.Button(fr_settings, width=10, pady=5, padx=5, text="Start Detector", command=startthread)
-btn_start.grid(row=10, column=0, columnspan=2, sticky="ew")
+btn_start = tk.Button(fr_settings, width=15, pady=5, padx=5, text="Start Detector", command=startthread)
+btn_start.grid(row=10, column=0, columnspan=2)
 all_inputs.append(btn_start)
+
+btn_downloadfiles = tk.Button(fr_settings, width=20, pady=5, padx=5, text="Manually download files", command=downloadfilesmanual)
+btn_downloadfiles.grid(row=11, column=0, columnspan=2)
+all_inputs.append(btn_downloadfiles)
+
+
 
 window.mainloop()
