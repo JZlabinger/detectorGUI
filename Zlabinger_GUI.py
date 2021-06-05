@@ -53,6 +53,9 @@ def start():
     detector.sendDetectorCommand('initialize')
     printToConsole('Initialized')
     
+    # Set detector configuration to external trigger
+    detector.setDetectorConfig('trigger_mode', 'exte')
+    
     # Set and print element/energy
     if (len(ent_element.get()) != 0):
         printToConsole('Setting Element')
@@ -70,31 +73,57 @@ def start():
     printToConsole('Count Time: {}'.format(detector.detectorConfig('count_time')['value']))
     
     # Set and print nr of trigger
-    detector.setDetectorConfig('ntrigger', int(ent_nrOfTrigger.get()))
+    nr_trigger = int(ent_nrOfTrigger.get())
+    detector.setDetectorConfig('ntrigger', nr_trigger)
     printToConsole('Nr of Trigger: {}'.format(detector.detectorConfig('count_time')['value']))
     
     # Set and print thresholds
     detector.setDetectorConfig('threshold/difference/mode', 'enabled')
-    if (len(ent_lowerThresh.get()) != 0):
-        detector.setDetectorConfig('threshold/1/energy', str(ent_lowerThresh.get()))
-    if (len(ent_upperThresh.get()) != 0):
-        detector.setDetectorConfig('threshold/2/energy', str(ent_upperThresh.get()))
+    lower_thresh = str(ent_lowerThresh.get())
+    upper_thresh = str(ent_upperThresh.get())
+    if (len(lower_thresh) != 0):
+        detector.setDetectorConfig('threshold/1/energy', lower_thresh)
+    if (len(upper_thresh) != 0):
+        detector.setDetectorConfig('threshold/2/energy', upper_thresh)
     printToConsole('Lower threshold energy: {} eV'.format(detector.detectorConfig('threshold/1/energy')['value']))
     printToConsole('Upper threshold energy: {} eV'.format(detector.detectorConfig('threshold/2/energy')['value']))
     
     # Configure filewriter
+    name_pattern = str(ent_namePattern.get())
     detector.setFileWriterConfig('mode', 'enabled')
-    detector.setFileWriterConfig('name_pattern', str(ent_namePattern.get()))
+    detector.setFileWriterConfig('name_pattern', name_pattern)
     detector.setFileWriterConfig('nimages_per_file', NR_IMAGES_PER_FILE)
     
+    # Arm detector and wait for trigger(s)
     printToConsole('Arming detector')
     detector.sendDetectorCommand('arm')
-    if (detector.detectorStatus("state")["value"] == "ready"):
-        printToConsole('Waiting for Trigger')
-    else:
-        printToConsole('Something failed. Detector state is "{}" but should be "ready".'.format(detector.detectorStatus("state")["value"]))
     
+    for i in range(nr_trigger):
+        if (detector.detectorStatus("state")["value"] == "ready"):
+            printToConsole('Waiting for trigger {}'.format(i))
+        else:
+            printToConsole('Something went wrong. Detector state is "{}" but should be "ready". Detector will now be disarmed.'.format(detector.detectorStatus("state")["value"]))
+            break
+    printToConsole('Stopping image acquisition')
+    printToConsole('Disarming detector')
+    detector.sendDetectorCommand('disarm')
+    
+    fname = name_pattern.replace('$id.*', '')
+    fpath = str(lbl_path.get())
+    printToConsole('replaced; ' + str(fname))
+    download_files(fname, fpath)
+        
     enableAllInputs()
+    
+def download_files(fName, fPath):
+    printToConsole('Preparing FileWriter')
+    detector.fileWriterStatus('data')
+    files = [f for f in detector.fileWriterStatus('data')['value'] if fName in f]
+    for f in files:
+        detector.fileWriterSave(f, fPath)
+        print('\t[OK] %s' %f)
+    printToConsole('Clearing buffer')
+    detector.sendFileWriterCommand('clear')
 
 # Configure Window
 window = tk.Tk()
