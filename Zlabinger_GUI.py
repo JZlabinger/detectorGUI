@@ -17,112 +17,112 @@ detector = DEigerClient(DCU_IP, DCU_PORT)
 
 DEFAULT_ELEMENT = "Cu"
 DEFAULT_ENERGY = ""
-DEFAULT_FRAME_TIME = 10
-DEFAULT_COUNT_TIME = 8
+DEFAULT_FRAMETIME = 10
+DEFAULT_COUNTTIME = 8
 DEFAULT_NR_TRIGGER = 1
-DEFAULT_LOWER_THRESH = ""
-DEFAULT_UPPER_THRESH = ""
-DEFAULT_NAME_PATTERN = "Pattern_$id"
-DEFAULT_PATH = "C:\Eiger_data"
+DEFAULT_LOWERTHRESH = ""
+DEFAULT_UPPERTHRESH = ""
+DEFAULT_NAMEPATTERN = "Pattern_$id"
+DEFAULT_FPATH = "C:\Eiger_data"
 NR_IMAGES_PER_FILE = 1000
 
 all_inputs = []
 
-def printToConsole(text):
+def printconsole(text):
     txt_console.config(state=tk.NORMAL)
     txt_console.insert(tk.END, text + '\n')
     txt_console.see('end')
     txt_console.config(state=tk.DISABLED)
     
-def disableAllInputs():
+def disable_all_inputs():
     for field in all_inputs:
         field.config(state=tk.DISABLED)
     
-def enableAllInputs():
+def enable_all_inputs():
     for field in all_inputs:
         field.config(state=tk.NORMAL)
     
-def startThread():
-    disableAllInputs()
+def startthread():
+    disable_all_inputs()
     global th 
     th = threading.Thread(target=start)
     th.start()
 
 def start():
-    printToConsole('Initializing...')
+    printconsole('Initializing...')
     detector.sendDetectorCommand('initialize')
-    printToConsole('Initialized')
+    printconsole('Initialized')
     
     # Set detector configuration to external trigger
     detector.setDetectorConfig('trigger_mode', 'exte')
     
     # Set and print element/energy
     if (len(ent_element.get()) != 0):
-        printToConsole('Setting Element')
+        printconsole('Setting Element')
         detector.setDetectorConfig('element', str(ent_element.get()))
-        printToConsole("Element: {}".format(detector.detectorConfig('element')['value']))
+        printconsole("Element: {}".format(detector.detectorConfig('element')['value']))
     else:
-        printToConsole('No Element given. Setting energy value')
+        printconsole('No Element given. Setting energy value')
         detector.setDetectorConfig('photon_energy', float(ent_energy.get()))
-    printToConsole("Energy: {} eV".format(detector.detectorConfig('photon_energy')['value']))
+    printconsole("Energy: {} eV".format(detector.detectorConfig('photon_energy')['value']))
     
     # Set and print frame_time and count_time
-    detector.setDetectorConfig('frame_time', float(ent_frameTime.get()))
-    detector.setDetectorConfig('count_time', float(ent_countTime.get()))
-    printToConsole('Frame Time: {}'.format(detector.detectorConfig('frame_time')['value']))
-    printToConsole('Count Time: {}'.format(detector.detectorConfig('count_time')['value']))
+    detector.setDetectorConfig('frame_time', float(ent_frametime.get()))
+    detector.setDetectorConfig('count_time', float(ent_counttime.get()))
+    printconsole('Frame Time: {}'.format(detector.detectorConfig('frame_time')['value']))
+    printconsole('Count Time: {}'.format(detector.detectorConfig('count_time')['value']))
     
     # Set and print nr of trigger
-    nr_trigger = int(ent_nrOfTrigger.get())
+    nr_trigger = int(ent_nr_of_trigger.get())
     detector.setDetectorConfig('ntrigger', nr_trigger)
-    printToConsole('Nr of Trigger: {}'.format(detector.detectorConfig('count_time')['value']))
+    printconsole('Nr of Trigger: {}'.format(detector.detectorConfig('count_time')['value']))
     
     # Set and print thresholds
     detector.setDetectorConfig('threshold/difference/mode', 'enabled')
-    lower_thresh = str(ent_lowerThresh.get())
-    upper_thresh = str(ent_upperThresh.get())
-    if (len(lower_thresh) != 0):
-        detector.setDetectorConfig('threshold/1/energy', lower_thresh)
-    if (len(upper_thresh) != 0):
-        detector.setDetectorConfig('threshold/2/energy', upper_thresh)
-    printToConsole('Lower threshold energy: {} eV'.format(detector.detectorConfig('threshold/1/energy')['value']))
-    printToConsole('Upper threshold energy: {} eV'.format(detector.detectorConfig('threshold/2/energy')['value']))
+    lowerthresh = str(ent_lowerthresh.get())
+    upperthresh = str(ent_upperthresh.get())
+    if (len(lowerthresh) != 0):
+        detector.setDetectorConfig('threshold/1/energy', lowerthresh)
+    if (len(upperthresh) != 0):
+        detector.setDetectorConfig('threshold/2/energy', upperthresh)
+    printconsole('Lower threshold energy: {} eV'.format(detector.detectorConfig('threshold/1/energy')['value']))
+    printconsole('Upper threshold energy: {} eV'.format(detector.detectorConfig('threshold/2/energy')['value']))
     
     # Configure filewriter
-    name_pattern = str(ent_namePattern.get())
+    namepattern = str(ent_namepattern.get())
     detector.setFileWriterConfig('mode', 'enabled')
-    detector.setFileWriterConfig('name_pattern', name_pattern)
+    detector.setFileWriterConfig('namepattern', namepattern)
     detector.setFileWriterConfig('nimages_per_file', NR_IMAGES_PER_FILE)
     
     # Arm detector and wait for trigger(s)
-    printToConsole('Arming detector')
+    printconsole('Arming detector')
     detector.sendDetectorCommand('arm')
     
     for i in range(nr_trigger):
         if (detector.detectorStatus("state")["value"] == "ready"):
-            printToConsole('Waiting for trigger {}'.format(i))
+            printconsole('Waiting for trigger {}'.format(i))
         else:
-            printToConsole('Something went wrong. Detector state is "{}" but should be "ready". Detector will now be disarmed.'.format(detector.detectorStatus("state")["value"]))
+            printconsole('Something went wrong. Detector state is "{}" but should be "ready". Detector will now be disarmed.'.format(detector.detectorStatus("state")["value"]))
             break
-    printToConsole('Stopping image acquisition')
-    printToConsole('Disarming detector')
+    printconsole('Stopping image acquisition')
+    printconsole('Disarming detector')
     detector.sendDetectorCommand('disarm')
     
-    fname = name_pattern.replace('$id.*', '')
+    fname = namepattern.replace('$id.*', '')
     fpath = str(lbl_path.get())
-    printToConsole('replaced; ' + str(fname))
-    download_files(fname, fpath)
+    printconsole('replaced; ' + str(fname))
+    downloadfiles(fname, fpath)
         
-    enableAllInputs()
+    enable_all_inputs()
     
-def download_files(fName, fPath):
-    printToConsole('Preparing FileWriter')
+def downloadfiles(fname, fpath):
+    printconsole('Preparing FileWriter')
     detector.fileWriterStatus('data')
-    files = [f for f in detector.fileWriterStatus('data')['value'] if fName in f]
+    files = [f for f in detector.fileWriterStatus('data')['value'] if fname in f]
     for f in files:
-        detector.fileWriterSave(f, fPath)
+        detector.fileWriterSave(f, fpath)
         print('\t[OK] %s' %f)
-    printToConsole('Clearing buffer')
+    printconsole('Clearing buffer')
     detector.sendFileWriterCommand('clear')
 
 # Configure Window
@@ -156,57 +156,57 @@ ent_energy.grid(row=1, column=1, sticky="w")
 ent_energy.insert(tk.END, DEFAULT_ENERGY)
 all_inputs.append(ent_energy)
 
-lbl_frameTime = tk.Label(fr_settings, pady=5, padx=5, text="Frame Time [s]:")
-ent_frameTime = tk.Entry(fr_settings, width=10)
-lbl_frameTime.grid(row=2, column=0, sticky="e")
-ent_frameTime.grid(row=2, column=1, sticky="w")
-ent_frameTime.insert(tk.END, DEFAULT_FRAME_TIME)
-all_inputs.append(ent_frameTime)
+lbl_frametime = tk.Label(fr_settings, pady=5, padx=5, text="Frame Time [s]:")
+ent_frametime = tk.Entry(fr_settings, width=10)
+lbl_frametime.grid(row=2, column=0, sticky="e")
+ent_frametime.grid(row=2, column=1, sticky="w")
+ent_frametime.insert(tk.END, DEFAULT_FRAMETIME)
+all_inputs.append(ent_frametime)
 
-lbl_countTime = tk.Label(fr_settings, pady=5, padx=5, text="Count Time [s]:")
-ent_countTime = tk.Entry(fr_settings, width=10)
-lbl_countTime.grid(row=3, column=0, sticky="e")
-ent_countTime.grid(row=3, column=1, sticky="w")
-ent_countTime.insert(tk.END, DEFAULT_COUNT_TIME)
-all_inputs.append(ent_countTime)
+lbl_counttime = tk.Label(fr_settings, pady=5, padx=5, text="Count Time [s]:")
+ent_counttime = tk.Entry(fr_settings, width=10)
+lbl_counttime.grid(row=3, column=0, sticky="e")
+ent_counttime.grid(row=3, column=1, sticky="w")
+ent_counttime.insert(tk.END, DEFAULT_COUNTTIME)
+all_inputs.append(ent_counttime)
 
-lbl_nrOfTrigger = tk.Label(fr_settings, pady=5, padx=5, text="Nr of Trigger:")
-ent_nrOfTrigger = tk.Entry(fr_settings, width=10)
-lbl_nrOfTrigger.grid(row=4, column=0, sticky="e")
-ent_nrOfTrigger.grid(row=4, column=1, sticky="w")
-ent_nrOfTrigger.insert(tk.END, DEFAULT_NR_TRIGGER)
-all_inputs.append(ent_nrOfTrigger)
+lbl_nr_of_trigger = tk.Label(fr_settings, pady=5, padx=5, text="Nr of Trigger:")
+ent_nr_of_trigger = tk.Entry(fr_settings, width=10)
+lbl_nr_of_trigger.grid(row=4, column=0, sticky="e")
+ent_nr_of_trigger.grid(row=4, column=1, sticky="w")
+ent_nr_of_trigger.insert(tk.END, DEFAULT_NR_TRIGGER)
+all_inputs.append(ent_nr_of_trigger)
 
-lbl_lowerThresh = tk.Label(fr_settings, pady=5, padx=5, text="Lower Threshold [eV]:")
-ent_lowerThresh = tk.Entry(fr_settings, width=10)
-lbl_lowerThresh.grid(row=5, column=0, sticky="e")
-ent_lowerThresh.grid(row=5, column=1, sticky="w")
-ent_lowerThresh.insert(tk.END, DEFAULT_LOWER_THRESH)
-all_inputs.append(ent_lowerThresh)
+lbl_lowerthresh = tk.Label(fr_settings, pady=5, padx=5, text="Lower Threshold [eV]:")
+ent_lowerthresh = tk.Entry(fr_settings, width=10)
+lbl_lowerthresh.grid(row=5, column=0, sticky="e")
+ent_lowerthresh.grid(row=5, column=1, sticky="w")
+ent_lowerthresh.insert(tk.END, DEFAULT_LOWERTHRESH)
+all_inputs.append(ent_lowerthresh)
 
-lbl_upperThresh = tk.Label(fr_settings, pady=5, padx=5, text="Upper Threshold [eV]:")
-ent_upperThresh = tk.Entry(fr_settings, width=10)
-lbl_upperThresh.grid(row=6, column=0, sticky="e")
-ent_upperThresh.grid(row=6, column=1, sticky="w")
-ent_upperThresh.insert(tk.END, DEFAULT_UPPER_THRESH)
-all_inputs.append(ent_upperThresh)
+lbl_upperthresh = tk.Label(fr_settings, pady=5, padx=5, text="Upper Threshold [eV]:")
+ent_upperthresh = tk.Entry(fr_settings, width=10)
+lbl_upperthresh.grid(row=6, column=0, sticky="e")
+ent_upperthresh.grid(row=6, column=1, sticky="w")
+ent_upperthresh.insert(tk.END, DEFAULT_UPPERTHRESH)
+all_inputs.append(ent_upperthresh)
 
-lbl_namePattern = tk.Label(fr_settings, pady=5, padx=5, text="Name Pattern:")
-ent_namePattern = tk.Entry(fr_settings, width=20)
-lbl_namePattern.grid(row=7, column=0, sticky="e")
-ent_namePattern.grid(row=7, column=1, sticky="w")
-ent_namePattern.insert(tk.END, DEFAULT_NAME_PATTERN)
-all_inputs.append(ent_namePattern)
+lbl_namepattern = tk.Label(fr_settings, pady=5, padx=5, text="Name Pattern:")
+ent_namepattern = tk.Entry(fr_settings, width=20)
+lbl_namepattern.grid(row=7, column=0, sticky="e")
+ent_namepattern.grid(row=7, column=1, sticky="w")
+ent_namepattern.insert(tk.END, DEFAULT_NAMEPATTERN)
+all_inputs.append(ent_namepattern)
 
-lbl_saveLocation = tk.Label(fr_settings, pady=5, padx=5, text="Save location:")
-btn_choosePath = tk.Button(fr_settings, text="Choose path")
-lbl_path = tk.Label(fr_settings, pady=5, padx=5, wraplength=200, text=DEFAULT_PATH)
-lbl_saveLocation.grid(row=8, column=0, sticky="e")
-btn_choosePath.grid(row=8, column=1, sticky="w")
+lbl_savelocation = tk.Label(fr_settings, pady=5, padx=5, text="Save location:")
+btn_choosepath = tk.Button(fr_settings, text="Choose path")
+lbl_path = tk.Label(fr_settings, pady=5, padx=5, wraplength=200, text=DEFAULT_FPATH)
+lbl_savelocation.grid(row=8, column=0, sticky="e")
+btn_choosepath.grid(row=8, column=1, sticky="w")
 lbl_path.grid(row=9, column=0, columnspan=2, sticky="ew")
-all_inputs.append(btn_choosePath)
+all_inputs.append(btn_choosepath)
 
-btn_start = tk.Button(fr_settings, width=10, pady=5, padx=5, text="Start Detector", command=startThread)
+btn_start = tk.Button(fr_settings, width=10, pady=5, padx=5, text="Start Detector", command=startthread)
 btn_start.grid(row=10, column=0, columnspan=2, sticky="ew")
 all_inputs.append(btn_start)
 
