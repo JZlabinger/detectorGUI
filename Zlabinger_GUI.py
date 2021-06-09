@@ -45,7 +45,6 @@ def enable_all_inputs():
     
 def startthread():
     disable_all_inputs()
-    global th 
     th = threading.Thread(target=start)
     th.start()
 
@@ -58,9 +57,10 @@ def start():
     detector.setDetectorConfig('trigger_mode', 'exte')
     
     # Set and print element/energy
-    if (len(ent_element.get()) != 0):
+    element = str(ent_element.get())
+    if (len(element) != 0):
         printconsole('Setting Element')
-        detector.setDetectorConfig('element', str(ent_element.get()))
+        detector.setDetectorConfig('element', element)
         printconsole("Element: {}".format(detector.detectorConfig('element')['value']))
     else:
         printconsole('No Element given. Setting energy value')
@@ -117,21 +117,33 @@ def start():
     enable_all_inputs()
     
 def downloadfiles(fname='', fpath=DEFAULT_FPATH):
-    printconsole('Preparing FileWriter')
-    detector.fileWriterStatus('data')
-    files = [f for f in detector.fileWriterStatus('data')['value'] if fname in f]
-    for f in files:
-        detector.fileWriterSave(f, fpath)
-        print('\t[OK] %s' %f)
-    printconsole('Clearing buffer')
-    detector.sendFileWriterCommand('clear')
+    try:
+        printconsole('Preparing FileWriter')
+        detector.fileWriterStatus('data')
+        files = [f for f in detector.fileWriterStatus('data')['value'] if fname in f]
+        for f in files:
+            detector.fileWriterSave(f, fpath)
+            print('\t[OK] %s' %f)
+        printconsole('Clearing buffer')
+        detector.sendFileWriterCommand('clear')
+    except:
+        exc_tuple = sys.exc_info()
+        printconsole("Error:")
+        printconsole(str(exc_tuple[0]))
+        printconsole(str(exc_tuple[1]))
+        printconsole(str(exc_tuple[2]))
+    finally:
+        printconsole("Done")
+        enable_all_inputs()
+        return False
     
-    enable_all_inputs()
 
 def downloadfilesmanual():
     disable_all_inputs()
     path = lbl_path.cget('text')
-    downloadfiles(fpath=path)
+    printconsole(path)
+    th = threading.Thread(target= lambda: downloadfiles(fpath=path))
+    th.start()
 
 
 # Configure Window
