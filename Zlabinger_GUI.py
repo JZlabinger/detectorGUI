@@ -7,6 +7,7 @@ Created on Wed May 26 15:17:41 2021
 import tkinter as tk
 from tkinter import scrolledtext
 import sys
+import time
 import threading
 import re
 sys.path.append('c:/EigerPythonDemoScript/')
@@ -20,7 +21,7 @@ DEFAULT_ELEMENT = "Cu"
 DEFAULT_ENERGY = ""
 DEFAULT_FRAMETIME = 10
 DEFAULT_COUNTTIME = 8
-DEFAULT_NR_TRIGGER = 1
+DEFAULT_NR_TRIGGER = 4
 DEFAULT_LOWERTHRESH = ""
 DEFAULT_UPPERTHRESH = ""
 DEFAULT_NAMEPATTERN = "Pattern_$id"
@@ -49,6 +50,8 @@ def startthread():
     th.start()
 
 def start():
+#    if (detector.detectorStatus("state")["value"] == "na" or
+#            detector.detectorStatus("state")["value"] == "error"):
     printconsole('Initializing...')
     detector.sendDetectorCommand('initialize')
     printconsole('Initialized')
@@ -76,7 +79,7 @@ def start():
     # Set and print nr of trigger
     nr_trigger = int(ent_nr_of_trigger.get())
     detector.setDetectorConfig('ntrigger', nr_trigger)
-    printconsole('Nr of Trigger: {}'.format(detector.detectorConfig('count_time')['value']))
+    printconsole('Nr of Trigger: {}'.format(detector.detectorConfig('ntrigger')['value']))
     
     # Set and print thresholds
     detector.setDetectorConfig('threshold/difference/mode', 'enabled')
@@ -92,7 +95,7 @@ def start():
     # Configure filewriter
     namepattern = str(ent_namepattern.get())
     detector.setFileWriterConfig('mode', 'enabled')
-    detector.setFileWriterConfig('namepattern', namepattern)
+    detector.setFileWriterConfig('name_pattern', namepattern)
     detector.setFileWriterConfig('nimages_per_file', NR_IMAGES_PER_FILE)
     
     # Arm detector and wait for trigger(s)
@@ -100,14 +103,26 @@ def start():
     detector.sendDetectorCommand('arm')
     
     for i in range(nr_trigger):
-        if (detector.detectorStatus("state")["value"] == "ready"):
-            printconsole('Waiting for trigger {}'.format(i))
-        else:
+        printconsole('Waiting for trigger {}'.format(i+1))
+        while(detector.detectorStatus("state")["value"] == "ready"):
+            pass
+#            time.sleep(0.1)
+        printconsole('Trigger received. Taking image {}.'.format(i+1))
+        while (detector.detectorStatus("state")["value"] == "acquire"):
+            pass
+            #time.sleep(0.1)
+        printconsole('Image {} taken. {}'.format(i+1, detector.detectorStatus("state")["value"]))
+        if (detector.detectorStatus("state")["value"] != "ready"):
             printconsole('Something went wrong. Detector state is "{}" but should be "ready". Detector will now be disarmed.'.format(detector.detectorStatus("state")["value"]))
             break
+        
     printconsole('Stopping image acquisition')
     printconsole('Disarming detector')
     detector.sendDetectorCommand('disarm')
+    
+    printconsole('Waiting a bit...')
+    time.sleep(5)
+    printconsole('Getting files')
     
     fname = re.sub('[$]id.*', '', namepattern)
     fpath = str(lbl_path.cget('text'))
